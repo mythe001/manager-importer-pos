@@ -1,0 +1,1492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>POS Sales Importer — v0.6.4</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f2f2f2;--card:#fff;--head:#f9f9f9;--alt:#fcfcfc;--border:#ddd;--border-dark:#bbb;--text:#333;--muted:#666;--blue:#428bca;--blue-dark:#357ebd;--green:#5cb85c;--green-dark:#4cae4c;--red:#d9534f;--yellow:#fcf8e3;--yellow-text:#8a6d3b;--info:#d9edf7;--info-text:#31708f;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;padding:12px;padding-bottom:70px;font-size:12px}
+button,input,select{font:inherit} button{border:1px solid var(--border-dark);background:#fff;color:var(--text);border-radius:3px;padding:6px 11px;cursor:pointer;font-weight:500}button:hover{background:#f5f5f5}button:disabled{opacity:.5;cursor:not-allowed}button.primary{background:var(--blue);border-color:var(--blue-dark);color:#fff}button.success{background:var(--green);border-color:var(--green-dark);color:#fff}button.danger{color:var(--red);border-color:#d43f3a;background:#fff}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:4px;margin-bottom:10px}.top h1{font-size:18px;font-weight:600}.sub{font-size:11px;color:var(--muted);margin-top:2px}.spacer{flex:1}.status{font-size:11px;color:var(--muted)}
+.steps{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;padding:6px;background:rgba(248,250,252,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}.step{background:#f1f5f9;border:1px solid var(--border);padding:9px 10px;border-radius:7px;color:var(--muted);font-weight:600;transition:.15s}.step.active{background:#fff;border-color:#93c5fd;color:var(--blue);box-shadow:0 1px 3px rgba(15,23,42,.06)}.step.done{color:#15803d;background:#f0fdf4;cursor:pointer}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:4px;margin-bottom:10px}.panel-head{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}.panel-head h2{font-size:14px}.panel-head .status{margin-left:auto}.panel-body{padding:12px}
+.notice,.warning,.error,.successbox{padding:8px 10px;border-radius:3px;margin-bottom:10px;line-height:1.4}.notice{color:var(--info-text);background:var(--info);border:1px solid #bce8f1}.warning{color:var(--yellow-text);background:var(--yellow);border:1px solid #faebcc}.error{color:#a94442;background:#f2dede;border:1px solid #ebccd1}.successbox{color:#3c763d;background:#dff0d8;border:1px solid #d6e9c6}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.toolbar input,.toolbar select,input,select{height:29px;border:1px solid var(--border-dark);border-radius:3px;padding:5px 7px;background:#fff;color:var(--text)}
+.summary{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:8px;margin-bottom:10px}.card{border:1px solid var(--border);border-radius:3px;padding:8px 10px}.card .label{font-size:10px;color:var(--muted);text-transform:uppercase}.card .value{font-size:16px;font-weight:700;margin-top:3px;color:#111}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:3px}table{width:100%;border-collapse:collapse;min-width:900px;font-size:12px}th,td{padding:5px 7px;border:1px solid var(--border);text-align:left;vertical-align:middle;height:30px}th{font-size:10px;text-transform:uppercase;color:var(--muted);background:var(--head);white-space:nowrap;font-weight:600;position:sticky;top:0;z-index:2}tr:nth-child(even){background:var(--alt)}tr:hover{background:#f5f5f5}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.match-badge{display:inline-block;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700}.match-badge.good{background:#dff0d8;color:#3c763d}.match-badge.warn{background:#fcf8e3;color:#8a6d3b}.match-badge.muted{background:#eee;color:#666}.excluded-row{opacity:.62}
+.footer{position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:rgba(255,255,255,.97);border:1px solid var(--border-dark);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 10px 30px rgba(15,23,42,.16);backdrop-filter:blur(10px)}.footer .status{margin-left:0;flex:1;min-width:0}.footer button{border-radius:7px;padding:8px 13px;font-weight:600;white-space:nowrap}.workflow-footer{min-height:52px}body{padding-bottom:82px}.receipt-date{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--head)}.receipt-date label{font-weight:700}.receipt-date input{min-width:145px}
+.hidden{display:none!important}.tabs{display:flex;gap:4px;margin-bottom:10px}.tab-btn{padding:8px 16px;border:1px solid var(--border-dark);background:#e9e9e9;border-radius:4px 4px 0 0;font-weight:600;cursor:pointer}.tab-btn.active{background:#fff;border-bottom-color:#fff}.tab-workspace{display:none}.tab-workspace.active{display:block}.unpaid-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.unpaid-toolbar input{min-width:300px}.unpaid-list{border:1px solid var(--border);border-radius:3px;overflow:hidden}.existing-invoice-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border-bottom:1px solid var(--border)}.existing-invoice-row:last-child{border-bottom:0}.existing-invoice-row:hover{background:#fafafa}.unpaid-preview{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:8px;margin:10px 0}.unpaid-preview .card{background:#fff}.unpaid-preview .value{font-size:17px;font-weight:700;margin-top:3px}.drop{border:2px dashed #cbd5e1;border-radius:8px;padding:28px;text-align:center;background:#f8fafc;transition:.15s}.drop.drag{border-color:var(--blue);background:#eff6ff;transform:translateY(-1px)}.drop input{display:none}.drop label{display:inline-block;padding:8px 14px;border:1px solid var(--blue-dark);background:var(--blue);color:#fff;border-radius:7px;cursor:pointer;font-weight:600}.small{font-size:11px;color:var(--muted)}.tag{display:inline-block;padding:2px 6px;border-radius:10px;background:#eee;color:#555;font-size:10px;margin-left:4px}.empty{text-align:center;padding:25px;color:var(--muted)}.workflow-filter{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 8px}.workflow-filter button{border-radius:999px;padding:5px 9px;font-size:11px;background:#fff}.workflow-filter button:hover{background:#f1f5f9}.workflow-filter .attention{border-color:#f59e0b;color:#92400e;background:#fffbeb}.receipt-date{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#f8fafc}.receipt-date label{font-weight:700;color:var(--text)}.receipt-date input{width:160px}
+@media(max-width:900px){.summary,.unpaid-preview{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}}
+
+/* V0.6.0 — transaction confirmation/success modal */
+.tx-allocation-title{display:grid;grid-template-columns:1fr auto;gap:18px;padding:0 12px 6px;color:#64748b;font-size:10px;font-weight:700;letter-spacing:.05em;}
+.tx-allocation .tx-summary-row strong{font-variant-numeric:tabular-nums;}
+.tx-allocation .tx-total-row{font-weight:700;background:#f8fafc;}
+
+.tx-modal[hidden] { display:none !important; }
+.tx-modal {
+  position:fixed; inset:0; z-index:9999;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+}
+.tx-modal-backdrop {
+  position:absolute; inset:0;
+  background:rgba(15,23,42,.48);
+  backdrop-filter:blur(2px);
+}
+.tx-modal-dialog {
+  position:relative; width:min(520px,100%);
+  max-height:min(90vh,760px); overflow:auto;
+  background:#fff; border:1px solid #e2e8f0;
+  border-radius:12px; box-shadow:0 24px 70px rgba(15,23,42,.22);
+}
+.tx-modal-header {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:16px; padding:20px 22px 12px;
+}
+.tx-modal-eyebrow {
+  font-size:10px; font-weight:700; letter-spacing:.08em;
+  color:#64748b; margin-bottom:4px;
+}
+.tx-modal-header h2 {
+  margin:0; font-size:19px; line-height:1.25; color:#0f172a;
+}
+.tx-modal-x {
+  width:32px; height:32px; border:0; border-radius:7px;
+  background:transparent; color:#64748b; font-size:24px;
+  line-height:1; cursor:pointer;
+}
+.tx-modal-x:hover { background:#f1f5f9; color:#0f172a; }
+.tx-modal-body { padding:8px 22px 20px; color:#334155; font-size:13px; }
+.tx-modal-actions {
+  display:flex; justify-content:flex-end; gap:8px;
+  padding:14px 22px 18px; border-top:1px solid #e2e8f0;
+  background:#f8fafc; border-radius:0 0 12px 12px;
+}
+.tx-modal-actions button {
+  min-width:92px; padding:9px 14px; border-radius:7px;
+  border:1px solid #cbd5e1; background:#fff; color:#334155;
+  font-size:13px; font-weight:600; cursor:pointer;
+}
+.tx-modal-actions button.primary {
+  background:#2563eb; border-color:#2563eb; color:#fff;
+}
+.tx-modal-actions button.primary:hover { background:#1d4ed8; border-color:#1d4ed8; }
+.tx-modal-actions button.success {
+  background:#16a34a; border-color:#16a34a; color:#fff;
+}
+.tx-modal-actions button.success:hover { background:#15803d; border-color:#15803d; }
+.tx-modal-actions button:disabled { opacity:.55; cursor:not-allowed; }
+.tx-summary {
+  border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;
+  background:#f8fafc;
+}
+.tx-summary-row {
+  display:flex; justify-content:space-between; gap:18px;
+  padding:9px 12px; border-bottom:1px solid #e2e8f0;
+}
+.tx-summary-row:last-child { border-bottom:0; }
+.tx-summary-row span:first-child { color:#64748b; }
+.tx-summary-row strong { color:#0f172a; text-align:right; font-variant-numeric:tabular-nums; }
+.tx-success {
+  padding:14px; margin-bottom:12px; border-radius:8px;
+  background:#f0fdf4; border:1px solid #bbf7d0; color:#166534;
+}
+.tx-success-title { font-size:15px; font-weight:700; margin-bottom:3px; }
+.tx-success-detail { font-size:12px; color:#15803d; }
+.tx-note {
+  margin-top:10px; font-size:12px; color:#64748b;
+}
+
+</style>
+</head>
+<body>
+<div class="top">
+  <div><h1>POS Sales Importer <span class="tag">v0.6.5</span></h1><div class="sub">Manager.io Integrated • Developed by Jesse Alcaraz</div></div>
+  <div class="spacer"></div>
+  <span id="managerStatus" class="status">Manager data not loaded</span>
+  <button id="scanManagerBtn" class="primary">↻ Scan Manager</button>
+</div>
+
+<div class="steps">
+  <div class="step active" id="step1">1. Scan</div>
+  <div class="step" id="step2">2. Map</div>
+  <div class="step" id="step3">3. Validate</div>
+  <div class="step" id="step4">4. Import</div>
+  <div class="step" id="step5">5. Receipts</div>
+</div>
+
+<div id="globalMsg"></div>
+
+<div class="tabs">
+  <button id="tabImport" class="tab-btn active" type="button">POS Sales Import</button>
+  <button id="tabUnpaid" class="tab-btn" type="button">Unpaid Sales Invoices</button>
+</div>
+
+<div id="workflowFooter" class="footer workflow-footer">
+  <span id="footerStatus" class="status">Scan Manager and upload a POS file to begin.</span>
+  <button id="mapBtn" class="primary" disabled>Continue to Map</button>
+  <button id="validateBtn" class="primary" disabled>Validate</button>
+  <button id="importBtn" class="success" disabled>Create Sales Invoice</button>
+  <button id="receiptsBtn" class="success" disabled>Configure Receipts</button>
+  <button id="footerReceiptsBtn" class="success" style="display:none">Record Collection</button>
+</div>
+
+<div id="importTab" class="tab-workspace active">
+  <div class="panel">
+    <div class="panel-head"><h2>1. Scan POS File</h2><span id="fileStatus" class="status">No file selected</span></div>
+    <div class="panel-body">
+      <div id="drop" class="drop">
+        <div style="font-size:14px;font-weight:600;margin-bottom:5px">Upload a POS sales export</div>
+        <div class="small" style="margin-bottom:12px">CSV or Excel (.xlsx / .xls). Nothing is written to Manager during scanning.</div>
+        <label for="fileInput">Choose POS File</label>
+        <input id="fileInput" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+      </div>
+    </div>
+  </div>
+
+  <div id="scanPanel" class="hidden">
+    <div class="summary">
+      <div class="card"><div class="label">Rows</div><div class="value" id="rowCount">0</div></div>
+      <div class="card"><div class="label">Unique Items</div><div class="value" id="uniqueCount">0</div></div>
+      <div class="card"><div class="label">Matched</div><div class="value" id="matchedCount">0</div></div>
+      <div class="card"><div class="label">Needs Mapping</div><div class="value" id="unmatchedCount">0</div></div>
+      <div class="card"><div class="label">Detected Amount</div><div class="value" id="detectedTotal">₱0.00</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Detected POS Columns</h2><span class="status">Map the fields the file actually provides</span></div>
+      <div class="panel-body"><div id="columnMapping"></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Item Mapping</h2><span id="mappingStatus" class="status"></span></div>
+      <div class="panel-body">
+        <div class="toolbar" style="margin-bottom:8px">
+          <input id="itemSearch" placeholder="Search POS item…">
+          <select id="mappingFilter">
+            <option value="all">All items</option>
+            <option value="matched">Matched</option>
+            <option value="unmatched">Needs mapping</option>
+            <option value="excluded">Excluded</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>POS Item</th><th>Qty</th><th>POS Amount</th><th>Manager Item</th><th>Tax Code</th><th>Division</th><th>Match</th><th>Action</th></tr>
+            </thead>
+            <tbody id="mappingBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="validatePanel" class="hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>3. Validate Import</h2><span id="validationStatus" class="status"></span></div>
+      <div class="panel-body">
+        <div id="validationBox"></div>
+        <div class="summary">
+          <div class="card"><div class="label">POS Total</div><div class="value" id="vPosTotal">₱0.00</div></div>
+          <div class="card"><div class="label">Net Before Tax</div><div class="value" id="vCalcTotal">₱0.00</div></div>
+          <div class="card"><div class="label">Unmapped Difference</div><div class="value" id="vDifference">₱0.00</div></div>
+          <div class="card"><div class="label">Manager Items</div><div class="value" id="vManagerItems">0</div></div>
+          <div class="card"><div class="label">Unresolved</div><div class="value" id="vUnresolved">0</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Manager Item</th><th>POS Qty</th><th>Unit Price</th><th>Amount</th><th>Tax / Division</th></tr></thead>
+            <tbody id="validationBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="importPanel" class="hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>4. Import to Manager</h2><span class="status">No write operation has occurred yet.</span></div>
+      <div class="panel-body">
+        <div class="toolbar">
+          <label>Customer <select id="customerSelect"><option value="">Load Manager data first</option></select></label>
+          <label>Invoice Date <input id="invoiceDate" type="date"></label>
+          <label>Reference <input id="invoiceReference" style="min-width:220px"></label>
+        </div>
+
+        <div class="panel" style="margin-top:10px;border-color:#c9d8e5">
+          <div class="panel-head"><h2>Invoice Settings</h2><span class="status">Applied when the invoice is created</span></div>
+          <div class="panel-body">
+            <div class="toolbar">
+              <label style="display:flex;align-items:center;gap:8px"><input id="applyTax" type="checkbox"> Apply Tax Code to imported sales</label>
+              <label>Default Tax Code <select id="defaultTaxCode" style="min-width:220px"><option value="">— Select tax code —</option></select></label>
+              <label style="display:flex;align-items:center;gap:8px"><input id="amountsIncludeTax" type="checkbox"> Amounts are tax inclusive</label>
+            </div>
+            <div class="small" style="margin-top:7px">The default tax code is applied to all imported item lines. Individual lines can be changed to another tax code or No tax in the mapping table.</div>
+            <hr style="border:0;border-top:1px solid var(--border);margin:12px 0">
+            <div class="toolbar">
+              <label style="display:flex;align-items:center;gap:8px"><input id="importDiscount" type="checkbox"> Import overall POS discount</label>
+              <label>Discount Amount <input id="discountAmount" type="number" step="0.01" value="0" style="width:130px"></label>
+              <label>Discount Item <select id="discountItem" style="min-width:220px"><option value="">— Select Manager item —</option></select></label>
+              <label>Discount Tax Code <select id="discountTaxCode" style="min-width:200px"><option value="">— No tax —</option></select></label>
+            </div>
+            <div class="small" style="margin-top:7px">The discount is posted as a separate invoice line using the selected non-inventory item. POS discounts are normalized to negative amounts.</div>
+            <hr style="border:0;border-top:1px solid var(--border);margin:12px 0">
+            <div class="toolbar">
+              <label style="display:flex;align-items:center;gap:8px"><input id="assignDivision" type="checkbox"> Assign Division to imported sales</label>
+              <label>Default Division <select id="defaultDivision" style="min-width:220px"><option value="">— No division —</option></select></label>
+            </div>
+            <div class="small" style="margin-top:7px">When enabled, the default Division is applied to all imported lines.</div>
+            <hr style="border:0;border-top:1px solid var(--border);margin:12px 0">
+            <div class="toolbar">
+              <label style="display:flex;align-items:center;gap:8px"><input id="actsAsDeliveryNote" type="checkbox" checked> Also acts as delivery note</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:10px;border-color:#c9d8e5">
+          <div class="panel-head"><h2>Sales Invoice Preview</h2><span class="status">Review before posting to Manager</span></div>
+          <div class="panel-body">
+            <div class="summary">
+              <div class="card"><div class="label">Item Sales</div><div class="value" id="previewItemTotal">₱0.00</div></div>
+              <div class="card"><div class="label">Discount</div><div class="value" id="previewDiscount">₱0.00</div></div>
+              <div class="card"><div class="label">Net Before Tax</div><div class="value" id="previewNet">₱0.00</div></div>
+              <div class="card"><div class="label">Tax Treatment</div><div class="value" id="previewTax" style="font-size:14px">No tax</div></div>
+              <div class="card"><div class="label">Division</div><div class="value" id="previewDivision" style="font-size:14px">No division</div></div>
+            </div>
+            <div class="small" id="previewDetails" style="margin-top:8px"></div>
+          </div>
+        </div>
+        <div id="importResult"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="unpaidTab" class="tab-workspace">
+  <div class="panel">
+    <div class="panel-head"><h2>Unpaid Sales Invoices</h2><span id="unpaidInvoiceStatus" class="status">Scan Manager to load invoices</span></div>
+    <div class="panel-body">
+      <div class="unpaid-toolbar">
+        <input id="unpaidInvoiceSearchTab" placeholder="Search invoice reference or customer…">
+        <button id="refreshUnpaidBtn" type="button" class="primary">↻ Refresh</button>
+      </div>
+      <div id="unpaidInvoiceListTab" class="unpaid-list"><div class="empty">Scan Manager data first.</div></div>
+      <div id="unpaidInvoicePreview" class="hidden"></div>
+    </div>
+  </div>
+  <div id="unpaidWorkspace"></div>
+</div>
+
+<!-- SHARED RECEIPT PANEL -->
+<div id="receiptPanel" class="panel hidden" style="margin-top:12px;border-color:#c9d8e5">
+  <div class="panel-head"><h2>Receipts</h2><span id="receiptStatus" class="status">Configure collections</span></div>
+  <div class="panel-body">
+    <div class="small" style="margin-bottom:10px">Enter the amount actually collected into each active Manager bank or cash account. Leave unused accounts blank.</div>
+     <div class="receipt-date"><label for="receiptDate">Receipt Date</label><input id="receiptDate" type="date"><span class="small">Independent of the Sales Invoice date.</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Manager Bank/Cash Account</th><th style="width:220px">Receipt Amount</th></tr></thead>
+        <tbody id="receiptBody"></tbody>
+        <tfoot>
+          <tr><th style="text-align:right">Total Collections</th><th class="money" id="receiptTotal">₱0.00</th></tr>
+          <tr><th style="text-align:right">Sales Invoice Total</th><th class="money" id="receiptInvoiceTotal">₱0.00</th></tr>
+          <tr><th style="text-align:right">Remaining Receivable</th><th class="money" id="receiptRemaining">₱0.00</th></tr>
+        </tfoot>
+      </table>
+    </div>
+    <div id="receiptValidation" style="margin-top:10px"></div>
+    <div class="toolbar" style="margin-top:10px"><button id="createReceiptsBtn" class="success">Record Collection</button></div>
+    <div id="receiptResult" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- V0.6.0 Transaction Confirmation Modal -->
+<div id="transactionModal" class="tx-modal" hidden aria-hidden="true">
+  <div class="tx-modal-backdrop" data-tx-close></div>
+  <div class="tx-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="txModalTitle">
+    <div class="tx-modal-header">
+      <div>
+        <div id="txModalEyebrow" class="tx-modal-eyebrow">CONFIRMATION</div>
+        <h2 id="txModalTitle">Confirm transaction</h2>
+      </div>
+      <button id="txModalX" class="tx-modal-x" type="button" aria-label="Close" data-tx-close>×</button>
+    </div>
+    <div id="txModalBody" class="tx-modal-body"></div>
+    <div id="txModalActions" class="tx-modal-actions"></div>
+  </div>
+</div>
+
+<script>
+function postMessageWithResponse(message){return new Promise((resolve,reject)=>{const requestId=crypto.randomUUID();const timer=setTimeout(()=>{window.removeEventListener('message',handler);reject(new Error('Timeout — is this running inside Manager.io?'));},30000);function handler(event){if(event.data?.type?.endsWith('-response')&&event.data?.requestId===requestId){clearTimeout(timer);window.removeEventListener('message',handler);resolve(event.data.body)}}window.addEventListener('message',handler);window.parent.postMessage({...message,requestId},'*')})}
+async function apiCall(method,path,body){const msg={type:'api-request',method,path};if(body!==undefined&&body!==null)msg.body=body;return postMessageWithResponse(msg)}
+const PAGE_SIZE=2000;
+async function fetchBatch(endpoint,onProgress){const all=[];let token=null,skip=0,useSkip=false,pageNo=0,total=null;while(true){let path=`${endpoint}?PageSize=${PAGE_SIZE}`;if(useSkip)path+=`&Skip=${skip}`;else if(token)path+=`&next_page_token=${encodeURIComponent(token)}`;const data=await apiCall('GET',path);const page=Array.isArray(data)?data:(Array.isArray(data?.items)?data.items:Array.isArray(data?.data)?data.data:[]);all.push(...page);if(total===null)total=data?.totalCount??data?.total??data?.count??data?._metadata?.totalCount??null;onProgress?.(all.length,total,pageNo++);const next=data?.next_page_token||data?.nextPageToken||data?.NextPageToken||data?.nextPage||data?._links?.next?.href||null;if(next){token=next;useSkip=false}else if(page.length>=PAGE_SIZE){token=null;useSkip=true;skip=all.length}else break;if(total!==null&&all.length>=total)break;if(pageNo>=5000)break}return all}
+
+const state={managerItems:[],customers:[],accounts:[],bankCashAccounts:[],divisions:[],balanceSheetAccounts:[],controlAccounts:[],taxCodes:[],fileRows:[],headers:[],columnMap:{},uniqueItems:[],managerReady:false,sourceName:'',invoiceCreated:false,defaultTaxCode:'',applyTax:false,amountsIncludeTax:false,discountAmount:0,discountItem:'',discountTaxCode:'',assignDivision:false,defaultDivision:'',invoiceKey:'',invoiceReference:'',invoiceTotal:0,receiptRows:[],receiptsCreated:false,receiptHistory:[],salesInvoices:[],existingInvoiceMode:false,receiptDate:'',existingInvoiceOutstanding:0,
+// robustness additions for the receipt flow:
+postedReceiptMap:new Map(),   // accountKey -> {key, amount, reference} — rows already posted THIS session, never reposted
+receiptsPosting:false};       // in-flight guard so a slow request can't be double-submitted
+
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const money=v=>new Intl.NumberFormat(undefined,{style:'currency',currency:'PHP',minimumFractionDigits:2,maximumFractionDigits:2}).format(Number.isFinite(Number(v))?Number(v):0);
+const round2=v=>Math.round((Number(v)||0)*100)/100;
+const n=v=>{if(v===null||v===undefined||v==='')return 0;let s=String(v).trim().replace(/₱/g,'').replace(/,/g,'').replace(/\(([^)]+)\)/,'-$1');const x=parseFloat(s.replace(/[^0-9.\-]/g,''));return Number.isFinite(x)?x:0};
+
+function recordItem(r){return r?.item||r||{}}
+function relationKey(v){
+  if(!v)return '';
+  if(typeof v==='string')return v;
+  return v.key||v.Key||v.id||v.Id||'';
+}
+
+function itemData(r){return r?.item||r?.nonInventoryItem||r?.inventoryKit||r||{}}
+function itemName(r){const x=itemData(r);const name=x.itemName||x.ItemName||x.name||x.Name||x.description||x.Description||'';if(name)return name;const withCode=x.nameWithCode||x.NameWithCode||'';const code=itemCode(r);if(withCode&&code){const prefix=new RegExp('^\\s*'+String(code).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*-\\s*','i');const stripped=String(withCode).replace(prefix,'').trim();if(stripped)return stripped}return withCode||'Unnamed Item'}
+function itemCode(r){const x=itemData(r);return x.itemCode||x.ItemCode||x.code||x.Code||''}
+function itemInactive(r){return Boolean(itemData(r).inactive??itemData(r).Inactive)}
+function itemKey(r){return relationKey(r)||relationKey(itemData(r))}
+function itemType(r){return r?.posType||r?.type||(r?.nonInventoryItem?'non-inventory':r?.inventoryKit?'inventory-kit':'inventory')}
+function taxCodeKey(r){return relationKey(r)||relationKey(itemData(r))}
+function taxCodeName(r){const x=taxCodeData(r);return x.name||x.Name||x.label||x.Label||'Tax code'}
+function taxCodeData(r){return r?.taxCode||r?.TaxCode||r?.item||r||{}}
+function taxCodeOptionName(r){const x=taxCodeData(r);const name=taxCodeName(r);const rate=x.rate??x.Rate;return rate!==undefined&&rate!==null&&String(rate)!==''?`${name} (${rate}%)`:name}
+function divisionKey(r){return relationKey(r)||relationKey(itemData(r))}
+function divisionName(r){const x=itemData(r);return x.name||x.Name||x.label||'Division'}
+function divisionOptions(selected,includeNone=true){const base=includeNone?`<option value="">— No division —</option>`:'';return base+state.divisions.map(d=>`<option value="${esc(divisionKey(d))}" ${selected&&divisionKey(d)===selected?'selected':''}>${esc(divisionName(d))}</option>`).join('')}
+
+function renderTaxControls(){
+  const d=document.getElementById('defaultTaxCode');if(!d)return;
+  d.innerHTML=`<option value="">— Select tax code —</option>`+state.taxCodes.map(t=>`<option value="${esc(taxCodeKey(t))}" ${state.defaultTaxCode&&taxCodeKey(t)===state.defaultTaxCode?'selected':''}>${esc(taxCodeOptionName(t))}</option>`).join('');
+  d.value=state.defaultTaxCode;
+  const dv=document.getElementById('defaultDivision');
+  if(dv){dv.innerHTML=divisionOptions(state.defaultDivision,true);dv.value=state.defaultDivision;dv.disabled=!state.divisions.length}
+  renderMapping();
+}
+
+function normalizeItem(r,type){const key=itemKey(r),x=r?.item||r?.nonInventoryItem||r?.inventoryKit||r;return {...r,key,posType:type,item:{...x}}}
+
+async function scanManager(){
+  const btn=document.getElementById('scanManagerBtn');btn.disabled=true;
+  managerStatus.textContent='Scanning Manager…';
+  try{
+    const [inv,nonInv,kits,customers,taxCodes,divisions,bankAccounts,bsAccounts,controlAccounts,receiptHistory,salesInvoices]=await Promise.all([
+      fetchBatch('/api4/inventory-item-batch'),
+      fetchBatch('/api4/non-inventory-item-batch').catch(()=>[]),
+      fetchBatch('/api4/inventory-kit-batch').catch(()=>[]),
+      fetchBatch('/api4/customer-batch'),
+      fetchBatch('/api4/tax-code-batch').catch(()=>[]),
+      fetchBatch('/api4/division-batch').catch(()=>[]),
+      fetchBatch('/api4/bank-or-cash-account-batch'),
+      fetchBatch('/api4/balance-sheet-account-batch').catch(()=>[]),
+      fetchBatch('/api4/control-account-batch').catch(()=>[]),
+      fetchBatch('/api4/receipt-batch').catch(()=>[]),
+      fetchBatch('/api4/sales-invoice-batch').catch(()=>[])
+    ]);
+    state.managerItems=[...inv.map(x=>normalizeItem(x,'inventory')), ...nonInv.map(x=>normalizeItem(x,'non-inventory')), ...kits.map(x=>normalizeItem(x,'inventory-kit'))].filter(x=>!itemInactive(x));
+    state.customers=customers.filter(x=>!Boolean(itemData(x).inactive));
+    state.taxCodes=taxCodes.filter(x=>!Boolean(itemData(x).inactive??x.inactive));
+    state.divisions=divisions.filter(x=>!Boolean(itemData(x).inactive??x.inactive));
+    state.bankCashAccounts=bankAccounts.filter(x=>!Boolean(itemData(x).inactive??x.inactive));
+    state.balanceSheetAccounts=bsAccounts;
+    state.controlAccounts=controlAccounts;
+    state.receiptHistory=receiptHistory;
+    state.salesInvoices=salesInvoices;
+    state.managerReady=true;
+
+    unpaidInvoices=buildUnpaidInvoices(state.salesInvoices,state.receiptHistory);
+    renderCustomers();renderTaxControls();renderInvoiceSettings();
+    managerStatus.textContent=`✓ ${state.managerItems.length} items · ${state.taxCodes.length} tax codes · ${state.bankCashAccounts.length} bank/cash accounts`;
+    updateFooterUI();
+    showMsg(`Manager scan complete: Loaded ${state.managerItems.length} active items, ${state.bankCashAccounts.length} bank accounts, and ${unpaidInvoices.length} unpaid invoices.`,'successbox');
+  }catch(e){
+    managerStatus.textContent='Manager scan failed';showMsg(e.message,'error');
+  }finally{btn.disabled=false}
+}
+
+function renderCustomers(){
+  customerSelect.innerHTML='';let walk='';
+  for(const r of state.customers){
+    const x=itemData(r),key=itemKey(r),name=x.name||x.Name||'Unnamed Customer';
+    if(!key)continue;
+    const o=document.createElement('option');o.value=key;o.textContent=name;customerSelect.appendChild(o);
+    if(name.trim().toLowerCase()==='walk-in customer')walk=key;
+  }
+  if(walk)customerSelect.value=walk;
+}
+
+function showMsg(text,cls='notice'){globalMsg.innerHTML=`<div class="${cls}">${esc(text)}</div>`}
+function setStage(num){for(let i=1;i<=5;i++){const el=document.getElementById('step'+i);if(el){el.classList.toggle('active',i===num);el.classList.toggle('done',i<num)}}}
+
+function detectField(headers,tests){for(const h of headers){const x=h.toLowerCase().replace(/[^a-z0-9]/g,'');if(tests.some(t=>x.includes(t)))return h}return ''}
+function detectColumns(){
+  const h=state.headers;
+  state.columnMap={
+    item:detectField(h,['itemname','productname','product','item','description','name']),
+    qty:detectField(h,['quantity','qty','units','soldqty']),
+    amount:detectField(h,['netsales','netamount','totalsales','totalamount','total','amount','sales']),
+    unitPrice:detectField(h,['unitprice','sellingprice','salesprice','price']),
+    discount:detectField(h,['discount','disc']),
+    vat:detectField(h,['vat','tax','taxamount'])
+  };
+  renderColumnMapping();
+}
+
+function renderColumnMapping(){
+  const fields=[['item','Item Name','Required'],['qty','Quantity','Required'],['amount','Line Total / Amount','Required if no Unit Price'],['unitPrice','Unit Price','Optional'],['discount','Discount','Optional'],['vat','VAT / Tax','Optional']];
+  columnMapping.innerHTML=fields.map(([key,label,req])=>`<div style="display:grid;grid-template-columns:180px 1fr 160px;gap:8px;align-items:center;margin-bottom:6px"><b>${label}</b><select data-field="${key}">${['',...state.headers].map(x=>`<option value="${esc(x)}" ${x===state.columnMap[key]?'selected':''}>${x?esc(x):'— Not provided —'}</option>`).join('')}</select><span class="small">${req}</span></div>`).join('');
+  columnMapping.querySelectorAll('select').forEach(s=>s.addEventListener('change',()=>{state.columnMap[s.dataset.field]=s.value;processUniqueItems()}));
+}
+
+function normalizeName(x){return String(x??'').toLowerCase().replace(/\s+/g,' ').replace(/[“”‘’]/g,'').trim()}
+function savedItemMappings(){try{return JSON.parse(localStorage.getItem('pos_item_mappings_v2')||'{}')}catch(e){return {}}}
+function saveItemMapping(posName,managerKey){try{const maps=savedItemMappings();const key=normalizeName(posName);if(!key)return;if(managerKey)maps[key]=managerKey;else delete maps[key];localStorage.setItem('pos_item_mappings_v2',JSON.stringify(maps))}catch(e){}}
+
+function autoMatch(name){
+  const q=normalizeName(name);
+  const saved=savedItemMappings()[q];
+  if(saved){const hit=state.managerItems.find(x=>itemKey(x)===saved);if(hit)return hit;}
+  if(!q)return null;
+  const exact=state.managerItems.find(x=>normalizeName(itemName(x))===q);if(exact)return exact;
+  const code=state.managerItems.find(x=>itemCode(x)&&normalizeName(itemCode(x))===q);if(code)return code;
+  return null;
+}
+
+function processUniqueItems(){
+  const itemCol=state.columnMap.item,qtyCol=state.columnMap.qty,amtCol=state.columnMap.amount;
+  if(!itemCol||!qtyCol||(!amtCol&&!state.columnMap.unitPrice)){showMsg('Map Item Name and Quantity, plus either Amount or Unit Price.','warning');return}
+  const previous=new Map((state.uniqueItems||[]).map(x=>[normalizeName(x.posName),x]));
+  const map=new Map();
+  for(const row of state.fileRows){
+    const name=String(row[itemCol]??'').trim();if(!name)continue;
+    const key=normalizeName(name);const q=n(row[qtyCol]);const amount=amtCol?n(row[amtCol]):0;
+    const unit=state.columnMap.unitPrice?n(row[state.columnMap.unitPrice]):(q?amount/q:0);
+    let x=map.get(key);
+    if(!x){
+      const old=previous.get(key);
+      x={posName:name,qty:0,amount:0,unitPrice:unit,discount:0,vat:0,manager:old?.manager||autoMatch(name),manual:!!old?.manual,excluded:!!old?.excluded,taxCode:old?.taxCode||'',taxOverrideSet:!!old?.taxOverrideSet,division:old?.division||'',divisionOverrideSet:!!old?.divisionOverrideSet};
+    }
+    x.qty+=q;x.amount+=amount||q*unit;map.set(key,x);
+  }
+  state.uniqueItems=[...map.values()];
+  renderMapping();updateSummary();
+  mapBtn.disabled=!state.uniqueItems.length;
+  document.getElementById('validateBtn').disabled=!state.uniqueItems.length;
+  setStage(2);scanPanel.classList.remove('hidden');updateFooterUI();
+}
+
+function renderMapping(){
+  const q=(itemSearch.value||'').toLowerCase();const filter=mappingFilter.value;
+  const rows=state.uniqueItems.filter(x=>{
+    if(q&&!normalizeName(x.posName).includes(normalizeName(q)))return false;
+    if(filter==='matched')return !!x.manager&&!x.excluded;
+    if(filter==='unmatched')return !x.manager&&!x.excluded;
+    if(filter==='excluded')return x.excluded;
+    return true;
+  });
+  mappingBody.innerHTML=rows.map((x)=>{
+    const idx=state.uniqueItems.indexOf(x);
+    const selectedTax=state.applyTax?(x.taxOverrideSet?x.taxCode:state.defaultTaxCode):'';
+    const selectedDiv=state.assignDivision?(x.divisionOverrideSet?x.division:state.defaultDivision):'';
+    return `<tr class="${x.excluded?'excluded':''}"><td><b>${esc(x.posName)}</b></td><td class="money">${x.qty.toLocaleString()}</td><td class="money">${money(x.amount)}</td><td><select data-map="${idx}" class="managerMap"><option value="">— Do not map —</option>${state.managerItems.map(m=>`<option value="${esc(itemKey(m))}" ${itemKey(m)===itemKey(x.manager)?'selected':''}>${esc(itemName(m))}</option>`).join('')}</select></td><td><select data-tax="${idx}" class="taxMap" ${state.applyTax?'':'disabled'}><option value="">${state.applyTax?'— No tax —':'— Tax disabled —'}</option>${state.taxCodes.map(t=>`<option value="${esc(taxCodeKey(t))}" ${selectedTax&&taxCodeKey(t)===selectedTax?'selected':''}>${esc(taxCodeOptionName(t))}</option>`).join('')}</select></td><td><select data-div="${idx}" class="divisionMap" ${state.assignDivision&&state.divisions.length?'':'disabled'}><option value="">${state.assignDivision?'— No division —':'— Division disabled —'}</option>${state.divisions.map(d=>`<option value="${esc(divisionKey(d))}" ${selectedDiv&&divisionKey(d)===selectedDiv?'selected':''}>${esc(divisionName(d))}</option>`).join('')}</select></td><td>${x.excluded?'<span class="match-badge muted">Excluded</span>':x.manager?'<span class="match-badge good">✓ Matched</span>':'<span class="match-badge warn">⚠ Needs mapping</span>'}</td><td>${x.excluded?`<button class="restore" data-restore="${idx}">↶ Restore</button>`:`<button class="remove" data-remove="${idx}">✕ Remove</button>`}</td></tr>`
+  }).join('')||'<tr><td colspan="8" class="empty">No items match filter.</td></tr>';
+
+  mappingBody.querySelectorAll('.managerMap').forEach(s=>s.addEventListener('change',e=>{const x=state.uniqueItems[Number(e.target.dataset.map)];const m=state.managerItems.find(m=>itemKey(m)===e.target.value);x.manager=m||null;saveItemMapping(x.posName,m?itemKey(m):'');renderMapping();updateSummary()}));
+  mappingBody.querySelectorAll('.taxMap').forEach(s=>s.addEventListener('change',e=>{const x=state.uniqueItems[Number(e.target.dataset.tax)];x.taxCode=e.target.value;x.taxOverrideSet=true;renderMapping()}));
+  mappingBody.querySelectorAll('.divisionMap').forEach(s=>s.addEventListener('change',e=>{const x=state.uniqueItems[Number(e.target.dataset.div)];x.division=e.target.value;x.divisionOverrideSet=true;renderMapping()}));
+  mappingBody.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{state.uniqueItems[Number(b.dataset.remove)].excluded=true;renderMapping();updateSummary()}));
+  mappingBody.querySelectorAll('[data-restore]').forEach(b=>b.addEventListener('click',()=>{state.uniqueItems[Number(b.dataset.restore)].excluded=false;renderMapping();updateSummary()}));
+}
+
+function updateSummary(){
+  const active=state.uniqueItems.filter(x=>!x.excluded);
+  const matched=active.filter(x=>x.manager).length;
+  const total=active.reduce((s,x)=>s+x.amount,0);
+  rowCount.textContent=state.fileRows.length.toLocaleString();
+  uniqueCount.textContent=active.length.toLocaleString();
+  matchedCount.textContent=matched.toLocaleString();
+  unmatchedCount.textContent=(active.length-matched).toLocaleString();
+  detectedTotal.textContent=money(total);
+}
+
+async function createInvoice(){
+  if(state.invoiceCreated)return false;
+  const customer=customerSelect.value;
+  if(!customer){showMsg('Please scan Manager and select a customer.','error');return false}
+  const active=state.uniqueItems.filter(x=>!x.excluded&&x.manager);
+  if(!active.length){showMsg('No mapped invoice lines available.','error');return false}
+
+  const lines=active.map((x,i)=>{
+    const line={lineNumber:i+1,item:itemKey(x.manager),lineDescription:'',qty:Number(x.qty)||0,salesUnitPrice:Number(x.qty?x.amount/x.qty:x.unitPrice)||0};
+    const tax=state.applyTax?(x.taxOverrideSet?x.taxCode:state.defaultTaxCode):'';if(tax)line.taxCode=tax;
+    const div=state.assignDivision?(x.divisionOverrideSet?x.division:state.defaultDivision):'';if(div)line.division=div;
+    return line;
+  });
+
+  const rawDiscount=Number(state.discountAmount)||0;const discount=rawDiscount>0?-rawDiscount:rawDiscount;
+  if(discount!==0){lines.push({lineNumber:lines.length+1,item:state.discountItem,lineDescription:'POS Daily Discount',qty:1,salesUnitPrice:discount,...(state.discountTaxCode?{taxCode:state.discountTaxCode}:{})})}
+
+  importBtn.disabled=true;
+  try{
+    const issueDate=invoiceDate.value;
+    const reference=invoiceReference.value.trim()||('POS-IMPORT-'+new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14));
+    const payload={value:{issueDate:issueDate+'T00:00:00',reference,customer,description:'POS Sales Import',lines,amountsIncludeTax:!!state.amountsIncludeTax,alsoActsAsDeliveryNote:!!actsAsDeliveryNote.checked}};
+    const result=await apiCall('POST','/api4/sales-invoice',payload);
+    const key=typeof result==='string'?result:(result?.key||result?.Key||result?.value?.key||result?.value?.Key||result?.value);
+    if(!key)throw new Error('Manager did not return the created Sales Invoice key.');
+    state.invoiceCreated=true;state.invoiceKey=key;state.invoiceReference=reference;state.invoiceTotal=calcInvoiceTotalFromLines(lines);
+    setStage(4);
+    importResult.innerHTML=`<div class="successbox"><b>✓ Sales Invoice created.</b> Reference: ${esc(reference)}</div>`;
+    showReceiptPanel();
+    return true;
+  }catch(e){
+    importBtn.disabled=false;importResult.innerHTML=`<div class="error"><b>Invoice creation failed:</b> ${esc(e.message)}</div>`;
+    return false;
+  }
+}
+
+function accountKey(r){return r?.key||r?.Key||r?.id||r?.Id||r?.item?.key||r?.item?.Key||r?.item?.id||r?.item?.Id||r?.account?.key||r?.account?.Key||r?.account?.id||r?.account?.Id||''}
+function accountName(r){const x=r?.item||r?.account||r||{};return x.name||x.Name||x.accountName||x.AccountName||x.label||x.Label||'Bank/Cash Account'}
+function calcInvoiceTotalFromLines(lines){return lines.reduce((sum,l)=>sum+(Number(l.qty)||0)*(Number(l.salesUnitPrice)||0),0)}
+
+/* Confirmed Accounts Receivable control-account UUID for this business (from a
+   verified posted receipt — see the receipt-batch record). Auto-detection by name/flag
+   is unreliable across Manager builds (field names and Suspense-naming vary), so this
+   known-good UUID is checked as an authoritative fallback before giving up — matching
+   the same DEFAULT_AR pattern used in the companion Sales & Purchase Entry extension. */
+const FIXED_AR_ACCOUNT='d1489e95-bb28-4f5d-b42e-67d3291b3893';
+
+async function resolveARAccountForCustomer(customerKey){
+  const isSuspenseName=name=>/\bsuspense\b/i.test(String(name||''));
+  const accountData=r=>r?.item||r?.account||r||{};
+  const isARRecord=r=>{
+    const x=accountData(r);
+    const name=x.name||x.Name||x.accountName||x.AccountName||x.label||x.Label||'';
+    return !isSuspenseName(name) && (
+      x.isAccountsReceivable===true || r?.isAccountsReceivable===true ||
+      x.isAccountsReceivableControlAccount===true || r?.isAccountsReceivableControlAccount===true ||
+      x.controlAccountType===1 || r?.controlAccountType===1 ||
+      String(name).trim().toLowerCase()==='accounts receivable' ||
+      /accounts?\s*receivable/i.test(String(name))
+    );
+  };
+
+  // 1) Prefer the exact AR control-account relation configured on the customer.
+  const c=state.customers.find(x=>itemKey(x)===customerKey || relationKey(x)===customerKey);
+  let ar=c?.item?.controlAccount||c?.controlAccount||c?.item?.accountsReceivableAccount||c?.accountsReceivableAccount||null;
+  if(ar&&typeof ar==='object') ar=accountKey(ar);
+  if(ar){
+    const rec=[...(state.balanceSheetAccounts||[]),...(state.controlAccounts||[])].find(x=>accountKey(x)===ar);
+    if(!rec || isARRecord(rec)) return ar;
+  }
+
+  // 2) Known-good fixed account for this business — checked before the fragile
+  // heuristics below, since it's a confirmed-working control account rather than a guess.
+  if(FIXED_AR_ACCOUNT) return FIXED_AR_ACCOUNT;
+
+  // 3) Reuse an AR account from an existing receipt for this customer/invoice.
+  for(const receipt of (state.receiptHistory||[])){
+    for(const line of (receipt?.item?.lines||receipt?.lines||[])){
+      const lineCustomer=relationKey(line?.accountsReceivableCustomer);
+      const lineInvoice=relationKey(line?.accountsReceivableSalesInvoice);
+      if((lineCustomer===customerKey || lineInvoice===state.invoiceKey) && line?.account){
+        const key=accountKey(line.account)||relationKey(line.account);
+        if(key){
+          const rec=[...(state.balanceSheetAccounts||[]),...(state.controlAccounts||[])].find(x=>accountKey(x)===key);
+          if(!rec || isARRecord(rec)) return key;
+        }
+      }
+    }
+  }
+
+  // 4) Search the already-scanned account records for the actual AR account.
+  const scanned=[...(state.balanceSheetAccounts||[]),...(state.controlAccounts||[])];
+  const hit=scanned.find(isARRecord);
+  if(hit){
+    const key=accountKey(hit);
+    if(key) return key;
+  }
+
+  // 5) Use Manager's general account batch and return its exact record key.
+  try{
+    const fresh=await fetchBatch('/api4/account-batch');
+    const freshHit=fresh.find(isARRecord);
+    if(freshHit){
+      const key=accountKey(freshHit);
+      if(key) return key;
+    }
+  }catch(e){
+    console.warn('General account AR lookup failed:',e);
+  }
+
+  // 6) Final direct Balance Sheet Account lookup.
+  try{
+    const fresh=await fetchBatch('/api4/balance-sheet-account-batch');
+    const freshHit=fresh.find(isARRecord);
+    if(freshHit){
+      const key=accountKey(freshHit);
+      if(key) return key;
+    }
+  }catch(e){
+    console.warn('Fresh AR account lookup failed:',e);
+  }
+
+  return '';
+}
+
+function showReceiptPanel(){
+  state.existingInvoiceMode=false;
+  state.receiptsCreated=false;
+  state.receiptRows=[];
+  state.postedReceiptMap=new Map();     // fresh invoice → no rows posted yet
+  state.receiptsPosting=false;
+  state.receiptDate=new Date().toISOString().slice(0,10);
+  const dateEl=document.getElementById('receiptDate');
+  if(dateEl)dateEl.value=state.receiptDate;
+  document.getElementById('importPanel').appendChild(document.getElementById('receiptPanel'));
+  document.getElementById('receiptPanel').classList.remove('hidden');
+  renderReceiptRows();setStage(5);updateFooterUI();
+}
+
+/* Renders one row per active Bank/Cash account. A row whose account already has a
+   receipt posted THIS session (state.postedReceiptMap) is shown locked with a ✓ so it
+   can never be re-submitted by mistake — the classic risk after a partial-batch failure
+   where earlier rows succeeded but a later one errored out. */
+function renderReceiptRows(){
+  const body=document.getElementById('receiptBody');
+  const current=new Map((state.receiptRows||[]).map(r=>[r.accountKey,r.amount]));
+  const accounts=state.bankCashAccounts||[];
+  body.innerHTML=accounts.length?accounts.map(a=>{
+    const k=accountKey(a);
+    const posted=state.postedReceiptMap.get(k);
+    if(posted){
+      return `<tr style="opacity:.65"><td><b>${esc(accountName(a))}</b></td>
+        <td class="money">${money(posted.amount)} <span class="tag" style="background:#dff0d8;color:#3c763d">✓ posted · ${esc(posted.reference)}</span></td></tr>`;
+    }
+    const v=current.get(k)??'';
+    return `<tr><td><b>${esc(accountName(a))}</b></td><td><input class="receiptAmount" data-account="${esc(k)}" type="number" min="0" step="0.01" value="${v!==''?esc(v):''}" placeholder="0.00" style="width:180px;text-align:right"></td></tr>`;
+  }).join(''):'<tr><td colspan="2" class="empty">No active Bank/Cash Accounts found.</td></tr>';
+  body.querySelectorAll('.receiptAmount').forEach(i=>i.addEventListener('input',updateReceiptTotals));
+  updateReceiptTotals();
+}
+
+/* Only collects rows that are still editable (not already posted) and clamps to a
+   sane non-negative, 2-decimal amount — a directly-typed negative or an over-precise
+   value (e.g. 100.00499) can slip past the <input min=0> guard in some browsers. */
+function collectReceiptRows(){
+  return [...document.querySelectorAll('.receiptAmount')]
+    .map(i=>({accountKey:i.dataset.account, amount:round2(Math.max(0, Number(i.value)||0))}))
+    .filter(r=>r.amount>0);
+}
+
+function updateReceiptTotals(){
+  state.receiptRows=collectReceiptRows();
+  const newTotal=state.receiptRows.reduce((s,r)=>s+r.amount,0);
+  // amounts already posted this session count against the invoice too — otherwise a
+  // partially-completed batch would look like it still had the full total outstanding.
+  let alreadyPosted=0; for(const p of state.postedReceiptMap.values()) alreadyPosted+=Number(p.amount)||0;
+  const invoiceTotal=Number(state.invoiceTotal);
+  const box=document.getElementById('receiptValidation');
+  const btn=document.getElementById('createReceiptsBtn');
+  // Guard against an invoice total that never got set (e.g. the panel was opened
+  // before an invoice existed) — without this, Number(undefined)=NaN comparisons
+  // silently evaluate as "valid" and let a $0 receipt through.
+  if(!Number.isFinite(invoiceTotal) || invoiceTotal<=0){
+    document.getElementById('receiptTotal').textContent=money(newTotal);
+    document.getElementById('receiptInvoiceTotal').textContent=money(0);
+    document.getElementById('receiptRemaining').textContent=money(0);
+    box.innerHTML='<div class="error"><b>No invoice is loaded for this receipt.</b> Create or select a Sales Invoice first.</div>';
+    btn.disabled=true; updateFooterUI(); return;
+  }
+  const remaining=invoiceTotal-alreadyPosted-newTotal;
+  document.getElementById('receiptTotal').textContent=money(newTotal);
+  document.getElementById('receiptInvoiceTotal').textContent=money(invoiceTotal);
+  document.getElementById('receiptRemaining').textContent=money(remaining);
+  if(newTotal<=0 && alreadyPosted<=0){box.innerHTML='<div class="warning">Enter collections received for the day.</div>';}
+  else if(remaining<-0.01){box.innerHTML=`<div class="error"><b>Collections exceed balance by ${money(Math.abs(remaining))}.</b></div>`;}
+  else if(newTotal<=0 && alreadyPosted>0){box.innerHTML=`<div class="successbox"><b>✓ ${money(alreadyPosted)} already posted.</b> ${remaining>0.01?`${money(remaining)} still remaining.`:'Fully collected.'}</div>`;}
+  else{box.innerHTML=`<div class="successbox"><b>✓ Receipt amounts valid.</b> ${remaining>0.01?`${money(remaining)} remaining receivable.`:'Fully collected.'}</div>`;}
+  btn.disabled = newTotal<=0 || remaining<-0.01 || state.receiptsCreated || state.receiptsPosting;
+  updateFooterUI();
+}
+
+/* Picks a reference for a new row's receipt that can't collide with one already
+   posted this session (or, if receiptHistory was loaded, with one from an earlier
+   session against the same invoice) — a straight `${ref}-R${i+1}` scheme breaks the
+   moment a previous attempt partially succeeded and left "-R1" already taken. */
+function nextReceiptReference(){
+  const used=new Set([...state.postedReceiptMap.values()].map(p=>p.reference));
+  for(const h of (state.receiptHistory||[])){
+    const x=recordItem(h);
+    for(const line of (x.lines||[])){
+      if(relationKey(line?.accountsReceivableSalesInvoice)===state.invoiceKey && x.reference) used.add(x.reference);
+    }
+  }
+  let n=1;
+  while(used.has(`${state.invoiceReference}-R${n}`)) n++;
+  return `${state.invoiceReference}-R${n}`;
+}
+
+async function createReceipts(){
+  if(state.receiptsCreated || state.receiptsPosting) return false;   // in-flight / already-done guard —
+  // stops the footer button and the panel button from double-submitting the same batch.
+  if(!state.invoiceKey){ showMsg('No invoice is loaded — create or select a Sales Invoice before posting receipts.','error'); return false; }
+  const dateEl=document.getElementById('receiptDate');
+  if(dateEl?.value) state.receiptDate=dateEl.value;
+  // Fall back to today, never to an empty string — an empty date produces the
+  // invalid ISO string "T00:00:00" which Manager will reject with an opaque error.
+  const receiptDate = state.receiptDate || invoiceDate?.value || new Date().toISOString().slice(0,10);
+
+  collectReceiptRows();
+  const rows=state.receiptRows||[];
+  if(!rows.length){ showMsg('Enter at least one receipt amount.','error'); return false; }
+  const newTotal=rows.reduce((s,r)=>s+r.amount,0);
+  let alreadyPosted=0; for(const p of state.postedReceiptMap.values()) alreadyPosted+=Number(p.amount)||0;
+  if(round2(alreadyPosted+newTotal) > round2(Number(state.invoiceTotal))+0.01){
+    showMsg('Collections cannot exceed the Invoice total.','error'); return false;
+  }
+
+  const customer=customerSelect.value;
+  if(!customer){ showMsg('Select a customer before posting receipts.','error'); return false; }
+  const arAccount=await resolveARAccountForCustomer(customer);
+  if(!arAccount){ showMsg('Could not resolve the Accounts Receivable account. No receipt was posted.','error'); return false; }
+
+  const btn=document.getElementById('createReceiptsBtn');
+  btn.disabled=true; state.receiptsPosting=true;
+  const created=[]; let failedRow=null, failErr=null;
+  try{
+    for(let i=0;i<rows.length;i++){
+      const r=rows[i];
+      const reference=nextReceiptReference();
+      const payload={value:{
+        date:receiptDate+'T00:00:00',
+        reference,
+        paidBy:1,
+        customer,
+        receivedIn:r.accountKey,
+        description:`POS Collection for Invoice ${state.invoiceReference}`,
+        lines:[{account:arAccount,accountsReceivableCustomer:customer,accountsReceivableSalesInvoice:state.invoiceKey,amount:r.amount}]
+      }};
+      let result;
+      try{
+        result=await apiCall('POST','/api4/receipt',payload);
+      }catch(primaryErr){
+        try{ result=await apiCall('POST','/api4/receipts',payload); }
+        catch(fallbackErr){
+          // surface both attempts rather than only the last, since either endpoint
+          // name could be the one that actually explains what went wrong
+          throw new Error(`${primaryErr.message} (also tried /api4/receipts: ${fallbackErr.message})`);
+        }
+      }
+      const key=typeof result==='string'?result:(result?.key||result?.Key||result?.value?.key);
+      if(!key){
+        const acct=(state.bankCashAccounts||[]).find(a=>accountKey(a)===r.accountKey);
+        throw new Error(`Receipt creation for ${acct?accountName(acct):r.accountKey} did not return a record key.`);
+      }
+      // Record success immediately — if a LATER row in this same loop fails, this one
+      // must not be re-posted on retry.
+      state.postedReceiptMap.set(r.accountKey, {key, amount:r.amount, reference});
+      created.push({key,reference,amount:r.amount});
+    }
+    state.receiptsCreated = (round2(alreadyPosted + newTotal) >= round2(Number(state.invoiceTotal)) - 0.01);
+    receiptResult.innerHTML=`<div class="successbox"><b>✓ ${created.length} receipt(s) posted successfully.</b></div>`;
+    showMsg(`Successfully posted ${created.length} receipt(s).`,'successbox');
+    return true;
+  }catch(e){
+    failErr=e;
+    const okCount=created.length, failCount=rows.length-okCount;
+    receiptResult.innerHTML = okCount>0
+      ? `<div class="warning"><b>${okCount} of ${rows.length} receipt(s) posted.</b> The remaining ${failCount} failed and were <u>not</u> retried automatically: ${esc(e.message)}. Fix the issue and press Create Receipts again — the ${okCount} that succeeded are locked in and won't be reposted.</div>`
+      : `<div class="error"><b>Receipt posting failed:</b> ${esc(e.message)}</div>`;
+    return false;
+  }finally{
+    state.receiptsPosting=false;
+    renderReceiptRows();   // repaint so any newly-posted rows lock and totals reflect them
+    updateFooterUI();
+  }
+}
+
+// --- UNPAID INVOICE FETCHING ENGINE ---
+let unpaidInvoices=[];
+
+function getInvoiceDate(r){const x=recordItem(r);return x.issueDate||x.date||''}
+function getInvoiceReference(r){const x=recordItem(r);return x.reference||x.invoiceNumber||relationKey(r)}
+function getInvoiceCustomerKey(r){const x=recordItem(r);return relationKey(x.customer||x.customerKey||x.customerId)}
+function getInvoiceTotal(r){
+  const x=recordItem(r);
+  const direct=[x.total,x.totalAmount,x.amount,x.invoiceTotal].map(Number).find(n=>Number.isFinite(n)&&n>=0);
+  if(direct!==undefined)return direct;
+  return (Array.isArray(x.lines)?x.lines:[]).reduce((sum,l)=>{
+    const amount=Number(l.amount??l.total);
+    if(Number.isFinite(amount)&&amount!==0)return sum+amount;
+    const qty=Number(l.qty??l.quantity??0), price=Number(l.salesUnitPrice??l.unitPrice??0);
+    return sum+(qty*price);
+  },0);
+}
+
+function calculateInvoicePayments(receipts){
+  const paidMap=Object.create(null);
+  for(const receipt of receipts||[]){
+    const x=recordItem(receipt);
+    for(const line of (x.lines||[])){
+      const key=relationKey(line?.accountsReceivableSalesInvoice||line?.salesInvoice||line?.invoice);
+      const amount=Number(line?.amount??0);
+      if(key&&amount>0) paidMap[key]=(paidMap[key]||0)+amount;
+    }
+  }
+  return paidMap;
+}
+
+function customerNameForKey(key){
+  const rec=state.customers.find(c=>itemKey(c)===key);
+  if(!rec)return 'Unknown Customer';
+  const x=recordItem(rec);return x.name||x.customerName||'Unknown Customer';
+}
+
+function buildUnpaidInvoices(invoices,receipts){
+  const paidMap=calculateInvoicePayments(receipts);
+  return (invoices||[]).map(inv=>{
+    const key=relationKey(inv);
+    const reference=getInvoiceReference(inv);
+    const customerKey=getInvoiceCustomerKey(inv);
+    const total=getInvoiceTotal(inv);
+    const paid=paidMap[key]||0;
+    const outstanding=Math.max(0,total-paid);
+    return {key,reference,customerKey,customerName:customerNameForKey(customerKey),issueDate:getInvoiceDate(inv),total,paid,outstanding};
+  }).filter(x=>x.key&&x.total>0&&x.outstanding>0.01)
+    .sort((a,b)=>new Date(b.issueDate||0).getTime()-new Date(a.issueDate||0).getTime());
+}
+
+function selectExistingInvoice(key){
+  const invoice=unpaidInvoices.find(x=>x.key===key);if(!invoice)return;
+  state.existingInvoiceMode=true;
+  state.invoiceCreated=false;
+  state.invoiceKey=invoice.key;
+  state.invoiceReference=invoice.reference;
+  state.invoiceTotal=invoice.outstanding;
+  state.receiptRows=[];
+  state.receiptsCreated=false;
+  state.postedReceiptMap=new Map();   // fresh selection → no rows posted yet in this session
+  state.receiptsPosting=false;
+  state.receiptDate=new Date().toISOString().slice(0,10);
+  
+  customerSelect.value=invoice.customerKey;
+  invoiceDate.value=invoice.issueDate?.slice(0,10)||'';
+  invoiceReference.value=invoice.reference;
+  const dateEl=document.getElementById('receiptDate');
+  if(dateEl)dateEl.value=state.receiptDate;
+
+  document.getElementById('unpaidWorkspace').appendChild(document.getElementById('receiptPanel'));
+  document.getElementById('receiptPanel').classList.remove('hidden');
+  
+  document.querySelector('#receiptPanel .panel-head h2').textContent='Receipts — Existing Unpaid Sales Invoice';
+  document.getElementById('receiptStatus').textContent=`Outstanding: ${money(invoice.outstanding)}`;
+  renderReceiptRows();
+  setStage(5);
+  updateFooterUI();
+  showMsg(`Loaded Invoice ${invoice.reference} for ${invoice.customerName}. Enter receipts below.`, 'notice');
+}
+
+function switchTab(name){
+  const isImport=name==='import';
+  importTab.classList.toggle('active',isImport);
+  unpaidTab.classList.toggle('active',!isImport);
+  document.getElementById('tabImport').classList.toggle('active',isImport);
+  document.getElementById('tabUnpaid').classList.toggle('active',!isImport);
+  const footer=document.getElementById('workflowFooter');
+  if(footer)footer.style.display=(isImport||state.existingInvoiceMode)?'flex':'none';
+  if(!isImport&&state.managerReady) renderUnpaidTabList(document.getElementById('unpaidInvoiceSearchTab').value||'');
+  updateFooterUI();
+}
+
+function renderUnpaidTabList(q){
+  const list=document.getElementById('unpaidInvoiceListTab');
+  q=String(q||'').trim().toLowerCase();
+  const matches=unpaidInvoices.filter(x=>!q||x.reference.toLowerCase().includes(q)||x.customerName.toLowerCase().includes(q));
+  list.innerHTML=matches.length?matches.map(x=>`<div class="existing-invoice-row"><div><b>${esc(x.reference)}</b><div class="small">${esc(x.customerName)} · ${esc(x.issueDate.slice(0,10))}</div><div class="small">Total: ${money(x.total)} · Paid: ${money(x.paid)} · <b>Outstanding: ${money(x.outstanding)}</b></div></div><button type="button" class="primary" onclick="selectExistingInvoice('${esc(x.key)}')">Receive Payment</button></div>`).join(''):'<div class="empty">No unpaid sales invoices found.</div>';
+}
+
+function validate(){
+  setStage(3);
+  validatePanel.classList.remove('hidden');importPanel.classList.remove('hidden');
+  const active=state.uniqueItems.filter(x=>!x.excluded);
+  const unresolved=active.filter(x=>!x.manager);
+  const posTotal=active.reduce((s,x)=>s+x.amount,0);
+  vPosTotal.textContent=money(posTotal);vCalcTotal.textContent=money(posTotal);vDifference.textContent='₱0.00';
+  vManagerItems.textContent=active.length-unresolved.length;vUnresolved.textContent=unresolved.length;
+  if(!unresolved.length){validationBox.innerHTML='<div class="successbox"><b>✓ Validation passed.</b> Ready to import.</div>';importBtn.disabled=false;} 
+  else{validationBox.innerHTML='<div class="warning">Map all items before importing.</div>';importBtn.disabled=true;}
+  updateInvoicePreview();
+  updateFooterUI();
+}
+
+function getInvoiceSummary(){
+  const active=state.uniqueItems.filter(x=>!x.excluded&&x.manager);
+  const gross=active.reduce((s,x)=>s+(Number(x.amount)||0),0);
+  const discountRaw=Number(state.discountAmount)||0;
+  const discount=discountRaw>0?-discountRaw:discountRaw;
+  const total=gross+discount;
+  return {active,gross,discount,total};
+}
+
+function updateInvoicePreview(){
+  const {active,gross:itemTotal,discount, total:net}=getInvoiceSummary();
+  const taxEnabled=!!state.applyTax;
+  const defaultTax=state.taxCodes.find(t=>taxCodeKey(t)===(state.defaultTaxCode||''));
+  const taxLabel=taxEnabled?(defaultTax?taxCodeOptionName(defaultTax):'Per-line tax codes'):'No tax';
+  const divEnabled=!!state.assignDivision;
+  const defaultDiv=state.divisions.find(d=>divisionKey(d)===(state.defaultDivision||''));
+  const divLabel=divEnabled?(defaultDiv?divisionName(defaultDiv):'Per-line divisions'):'No division';
+  const customerName=document.getElementById('customerSelect')?.options[document.getElementById('customerSelect')?.selectedIndex]?.text||'—';
+  const date=document.getElementById('invoiceDate')?.value||'—';
+  const ref=document.getElementById('invoiceReference')?.value||'—';
+  const delivery=document.getElementById('actsAsDeliveryNote')?.checked?'Yes':'No';
+  document.getElementById('previewItemTotal').textContent=money(itemTotal);
+  document.getElementById('previewDiscount').textContent=money(discount);
+  document.getElementById('previewNet').textContent=money(net);
+  document.getElementById('previewTax').textContent=taxLabel;
+  document.getElementById('previewDivision').textContent=divLabel;
+  document.getElementById('previewDetails').textContent=
+    `Customer: ${customerName} · Invoice date: ${date} · Reference: ${ref} · Also acts as delivery note: ${delivery} · ${active.length} item line(s)`;
+}
+
+function renderInvoiceSettings(){
+  const di=document.getElementById('discountItem');if(!di)return;
+  const items=state.managerItems.filter(x=>itemType(x)==='non-inventory');
+  di.innerHTML='<option value="">— Select Manager item —</option>'+items.map(x=>`<option value="${esc(itemKey(x))}">${esc(itemName(x))}</option>`).join('');
+  const dt=document.getElementById('discountTaxCode');
+  dt.innerHTML='<option value="">— No tax —</option>'+state.taxCodes.map(t=>`<option value="${esc(taxCodeKey(t))}">${esc(taxCodeOptionName(t))}</option>`).join('');
+}
+
+function parseCSV(text){
+  text=String(text??'').replace(/^\\uFEFF/,'');
+  const sample=text.split(/\\r?\\n/).slice(0,10).join('\\n');
+  const candidates=[',',';','\\t','|'];
+  let delimiter=',',best=-1;
+  for(const d of candidates){
+    let count=0,inQuotes=false;
+    for(let i=0;i<sample.length;i++){
+      const c=sample[i],next=sample[i+1];
+      if(c==='"'){
+        if(inQuotes&&next==='"'){i++;}
+        else inQuotes=!inQuotes;
+      }else if(c===d&&!inQuotes)count++;
+    }
+    if(count>best){best=count;delimiter=d;}
+  }
+
+  const rows=[]; let row=[], field='', inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i], next=text[i+1];
+    if(c==='"'){
+      if(inQuotes&&next==='"'){field+='"';i++;}
+      else inQuotes=!inQuotes;
+    }else if(c===delimiter&&!inQuotes){
+      row.push(field);field='';
+    }else if((c==='\\n'||c==='\\r')&&!inQuotes){
+      if(c==='\\r'&&next==='\\n')i++;
+      row.push(field);field='';
+      if(row.some(v=>String(v).trim()!=='')){rows.push(row);row=[];}
+      else row=[];
+    }else field+=c;
+  }
+  if(field!==''||row.length){
+    row.push(field);
+    if(row.some(v=>String(v).trim()!==''))rows.push(row);
+  }
+  return rows;
+}
+
+function makeRowsFromMatrix(matrix){
+  const clean=matrix.map(r=>Array.isArray(r)?r.map(v=>v??''):[]);
+
+  // Skip leading blank/title rows. Prefer the first row with at least
+  // two non-empty cells so exports with a report title still work.
+  const headerIndex=clean.findIndex(r=>r.filter(v=>String(v).trim()!=='').length>=2);
+  if(headerIndex<0)return [];
+
+  const rawHeaders=clean[headerIndex];
+  const headers=[];
+  const used=new Map();
+
+  rawHeaders.forEach((h,i)=>{
+    let name=String(h??'').replace(/^\\uFEFF/,'').trim();
+    if(!name)name=`Column ${i+1}`;
+    const base=name;
+    const count=(used.get(base)||0)+1;
+    used.set(base,count);
+    if(count>1)name=`${base} (${count})`;
+    headers.push(name);
+  });
+
+  return clean.slice(headerIndex+1)
+    .filter(r=>r.some(v=>String(v).trim()!==''))
+    .map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
+}
+
+async function parseFile(file){
+  fileStatus.textContent='Reading '+file.name+'…';
+  try{
+    let rows;
+    if(file.name.toLowerCase().endsWith('.csv')){
+      rows=makeRowsFromMatrix(parseCSV(await file.text()));
+    }else{
+      const data=await file.arrayBuffer();
+      const wb=XLSX.read(data,{type:'array',cellDates:true,cellNF:true});
+      if(!wb.SheetNames.length)throw new Error('No worksheet found in the uploaded file.');
+
+      // Use the first worksheet that actually contains a cell range.
+      let ws=null,sheetName='';
+      for(const name of wb.SheetNames){
+        const candidate=wb.Sheets[name];
+        if(candidate&&candidate['!ref']){ws=candidate;sheetName=name;break;}
+      }
+      if(!ws)throw new Error('The workbook contains no readable worksheet data.');
+
+      rows=makeRowsFromMatrix(XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false,blankrows:false}));
+      if(!rows.length)throw new Error(`Worksheet "${sheetName}" contains no readable data rows.`);
+    }
+
+    if(!rows.length)throw new Error('The uploaded file contains no data rows.');
+
+    state.fileRows=rows;
+    state.headers=[...new Set(rows.flatMap(r=>Object.keys(r)))];
+    detectColumns();
+
+    const rawDiscount=state.columnMap.discount?rows.reduce((s,r)=>s+n(r[state.columnMap.discount]),0):0;
+    state.discountAmount=rawDiscount>0?-rawDiscount:rawDiscount;
+    const discountInput=document.getElementById('discountAmount');
+    if(discountInput)discountInput.value=state.discountAmount.toFixed(2);
+    const discountToggle=document.getElementById('importDiscount');
+    if(discountToggle)discountToggle.checked=!!state.discountAmount;
+
+    // Do not block the user merely because auto-detection missed a
+    // required field. Show the mapping UI and let the user choose it.
+    document.getElementById('scanPanel').classList.remove('hidden');
+    renderColumnMapping();
+
+    const requiredReady=!!state.columnMap.item&&!!state.columnMap.qty&&
+      (!!state.columnMap.amount||!!state.columnMap.unitPrice);
+
+    if(requiredReady){
+      processUniqueItems();
+    }else{
+      state.uniqueItems=[];
+      updateSummary();
+      setStage(1);
+      document.getElementById('footerStatus').textContent=
+        'File scanned. Select the required POS columns above.';
+    }
+
+    renderInvoiceSettings();
+    updateInvoicePreview();
+    document.getElementById('mapBtn').disabled=!state.uniqueItems.length;
+    document.getElementById('validateBtn').disabled=!state.uniqueItems.length;
+
+    fileStatus.textContent=`✓ ${file.name} loaded (${rows.length.toLocaleString()} rows)`;
+    updateFooterUI();
+  }catch(e){
+    showMsg('Could not read file: '+e.message,'error');
+    fileStatus.textContent='File read failed';
+  }
+}
+
+// EVENT ATTACHMENTS
+document.getElementById('scanManagerBtn').addEventListener('click',scanManager);
+document.getElementById('tabImport').addEventListener('click',()=>switchTab('import'));
+document.getElementById('tabUnpaid').addEventListener('click',()=>switchTab('unpaid'));
+document.getElementById('refreshUnpaidBtn').addEventListener('click',scanManager);
+document.getElementById('unpaidInvoiceSearchTab').addEventListener('input',e=>renderUnpaidTabList(e.target.value));
+
+const fileInputEl=document.getElementById('fileInput');
+const dropEl=document.getElementById('drop');
+fileInputEl.addEventListener('change',e=>{if(e.target.files[0])parseFile(e.target.files[0])});
+dropEl.addEventListener('dragover',e=>{e.preventDefault();dropEl.classList.add('drag')});
+dropEl.addEventListener('dragleave',()=>dropEl.classList.remove('drag'));
+dropEl.addEventListener('drop',e=>{e.preventDefault();dropEl.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)parseFile(f)});
+
+document.getElementById('mapBtn').addEventListener('click',()=>{
+  setStage(2);
+  document.getElementById('scanPanel').classList.remove('hidden');
+  document.getElementById('mapBtn').disabled=true;
+  document.getElementById('validateBtn').disabled=false;
+  document.getElementById('footerStatus').textContent='Mapping phase active. Resolve unmatched items.';
+  updateFooterUI();
+});
+document.getElementById('validateBtn').addEventListener('click',()=>{validate();updateFooterUI();});
+document.getElementById('importBtn').addEventListener('click',confirmCreateInvoice);
+document.getElementById('receiptsBtn').addEventListener('click',()=>{document.getElementById('receiptPanel')?.scrollIntoView({behavior:'smooth',block:'start'});setStage(5);});
+document.getElementById('footerReceiptsBtn').addEventListener('click',()=>{if(document.getElementById('createReceiptsBtn')?.disabled)return;confirmCreateReceipts();});
+document.getElementById('createReceiptsBtn').addEventListener('click',confirmCreateReceipts);
+
+function updateFooterUI(){
+  const footer=document.getElementById('workflowFooter');
+  const map=document.getElementById('mapBtn'), validateBtn=document.getElementById('validateBtn'), importBtnEl=document.getElementById('importBtn'), receipts=document.getElementById('receiptsBtn'), receiptAction=document.getElementById('footerReceiptsBtn');
+  if(!footer||!map||!validateBtn||!importBtnEl||!receipts||!receiptAction)return;
+  [map,validateBtn,importBtnEl,receipts,receiptAction].forEach(b=>b.style.display='none');
+  if(state.receiptsCreated){ footer.style.display='flex'; footerStatus.textContent='Collections posted successfully.'; return; }
+  if(state.existingInvoiceMode){
+    footer.style.display='flex';
+    const panelVisible=!document.getElementById('receiptPanel')?.classList.contains('hidden');
+    footerStatus.textContent=panelVisible?'Enter the amounts collected and record the collection.':'Select an unpaid invoice to begin collection.';
+    receiptAction.style.display=panelVisible?'inline-block':'none';
+    receiptAction.disabled=!!document.getElementById('createReceiptsBtn')?.disabled;
+    return;
+  }
+  if(state.invoiceCreated){
+    footer.style.display='flex';
+    const panelVisible=!document.getElementById('receiptPanel')?.classList.contains('hidden');
+    footerStatus.textContent=panelVisible?'Enter the amounts collected and record the collection.':'Sales Invoice created. Continue to Receipts.';
+    receiptAction.style.display=panelVisible?'inline-block':'none';
+    receiptAction.disabled=!!document.getElementById('createReceiptsBtn')?.disabled;
+    receipts.style.display=panelVisible?'none':'inline-block';
+    return;
+  }
+  if(!document.getElementById('validatePanel')?.classList.contains('hidden')){
+    if(!importBtnEl.disabled){ footerStatus.textContent='Validation passed. Ready to create the Sales Invoice.'; importBtnEl.style.display='inline-block'; }
+    else footerStatus.textContent='Resolve the validation issues before importing.';
+    return;
+  }
+  if(state.uniqueItems.length){ footerStatus.textContent='Mapping phase active. Resolve unmatched items.'; validateBtn.style.display='inline-block'; return; }
+  if(state.fileRows.length){
+    const ready=!!state.columnMap.item&&!!state.columnMap.qty&&
+      (!!state.columnMap.amount||!!state.columnMap.unitPrice);
+    footerStatus.textContent=ready
+      ? 'File scanned. Review the detected fields and item mappings.'
+      : 'Select Item Name, Quantity, and Amount or Unit Price above.';
+    map.style.display=ready?'inline-block':'none';
+    return;
+  }
+  footerStatus.textContent='Scan Manager and upload a POS file to begin.';
+}
+
+function jumpToStep(num){
+  if(num===1){document.getElementById('drop')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(num===2){document.getElementById('scanPanel')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(num===3){document.getElementById('validatePanel')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(num===4){document.getElementById('importPanel')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(num===5){document.getElementById('receiptPanel')?.scrollIntoView({behavior:'smooth',block:'start'});}
+}
+[1,2,3,4,5].forEach(n=>document.getElementById('step'+n)?.addEventListener('click',()=>{const el=document.getElementById('step'+n);if(el.classList.contains('done')||el.classList.contains('active'))jumpToStep(n);}));
+
+
+document.getElementById('itemSearch').addEventListener('input',renderMapping);
+document.getElementById('mappingFilter').addEventListener('change',renderMapping);
+document.getElementById('receiptDate')?.addEventListener('change',e=>{state.receiptDate=e.target.value;updateFooterUI();});
+
+
+const previewControls=['customerSelect','invoiceDate','invoiceReference','applyTax','defaultTaxCode','amountsIncludeTax','importDiscount','discountAmount','discountItem','discountTaxCode','assignDivision','defaultDivision','actsAsDeliveryNote'];
+previewControls.forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('change',updateInvoicePreview);
+  if(el.tagName==='INPUT')el.addEventListener('input',updateInvoicePreview);
+});
+
+document.getElementById('applyTax').addEventListener('change',e=>{
+  state.applyTax=e.target.checked;
+  renderMapping();
+  updateInvoicePreview();
+});
+document.getElementById('defaultTaxCode').addEventListener('change',e=>{
+  state.defaultTaxCode=e.target.value;
+  renderMapping();
+  updateInvoicePreview();
+});
+document.getElementById('amountsIncludeTax').addEventListener('change',e=>{
+  state.amountsIncludeTax=e.target.checked;
+  updateInvoicePreview();
+});
+document.getElementById('importDiscount').addEventListener('change',e=>{
+  const on=e.target.checked;
+  const d=Number(document.getElementById('discountAmount').value)||0;
+  state.discountAmount=on?(d>0?-d:d):0;
+  renderInvoiceSettings();
+  updateInvoicePreview();
+});
+document.getElementById('discountAmount').addEventListener('input',e=>{
+  const d=Number(e.target.value)||0;
+  state.discountAmount=document.getElementById('importDiscount').checked?(d>0?-d:d):0;
+  if(d>0)e.target.value=state.discountAmount.toFixed(2);
+  updateInvoicePreview();
+});
+document.getElementById('discountItem').addEventListener('change',e=>{
+  state.discountItem=e.target.value;
+  updateInvoicePreview();
+});
+document.getElementById('discountTaxCode').addEventListener('change',e=>{
+  state.discountTaxCode=e.target.value;
+  updateInvoicePreview();
+});
+document.getElementById('assignDivision').addEventListener('change',e=>{
+  state.assignDivision=e.target.checked;
+  renderMapping();
+  updateInvoicePreview();
+});
+document.getElementById('defaultDivision').addEventListener('change',e=>{
+  state.defaultDivision=e.target.value;
+  renderMapping();
+  updateInvoicePreview();
+});
+
+document.getElementById('invoiceDate').value=new Date().toISOString().slice(0,10);
+const initialReceiptDate=new Date().toISOString().slice(0,10);
+state.receiptDate=initialReceiptDate;
+const initialReceiptDateEl=document.getElementById('receiptDate');
+if(initialReceiptDateEl)initialReceiptDateEl.value=initialReceiptDate;
+document.getElementById('invoiceReference').value='POS-IMPORT-'+new Date().toISOString().slice(0,10).replace(/-/g,'');
+renderInvoiceSettings();
+updateInvoicePreview();
+updateFooterUI();
+
+/* V0.6.0 transaction modal helpers */
+const txModal = document.getElementById('transactionModal');
+const txModalTitle = document.getElementById('txModalTitle');
+const txModalEyebrow = document.getElementById('txModalEyebrow');
+const txModalBody = document.getElementById('txModalBody');
+const txModalActions = document.getElementById('txModalActions');
+const txModalX = document.getElementById('txModalX');
+
+let txModalPreviousFocus = null;
+
+function txEsc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function txMoney(v) {
+  const n = Number(v) || 0;
+  return '₱' + n.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function txOpen({eyebrow='CONFIRMATION', title, body, actions}) {
+  txModalPreviousFocus = document.activeElement;
+  txModalEyebrow.textContent = eyebrow;
+  txModalTitle.textContent = title;
+  txModalBody.innerHTML = body;
+  txModalActions.innerHTML = actions;
+  txModal.hidden = false;
+  txModal.setAttribute('aria-hidden','false');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => {
+    const first = txModalActions.querySelector('button:not([disabled])') || txModalX;
+    first?.focus();
+  }, 0);
+}
+function txClose() {
+  txModal.hidden = true;
+  txModal.setAttribute('aria-hidden','true');
+  document.body.style.overflow = '';
+  txModalPreviousFocus?.focus?.();
+  txModalPreviousFocus = null;
+}
+document.querySelectorAll('[data-tx-close]').forEach(el => el.addEventListener('click', txClose));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !txModal.hidden) txClose();
+});
+
+/* V0.6.0 transaction actions — confirmation sits directly on the real buttons. */
+
+function txInvoiceConfirmation(){
+  const customerEl=document.getElementById('customerSelect');
+  const customer=customerEl?.options[customerEl.selectedIndex]?.text||'—';
+  const date=document.getElementById('invoiceDate')?.value||'—';
+  const reference=document.getElementById('invoiceReference')?.value||'—';
+  const {gross,discount,total}=getInvoiceSummary();
+
+  return `<div style="margin-bottom:12px">Please confirm that you want to create this Sales Invoice in Manager.</div>
+    <div class="tx-summary">
+      <div class="tx-summary-row"><span>Customer</span><strong>${txEsc(customer)}</strong></div>
+      <div class="tx-summary-row"><span>Date</span><strong>${txEsc(date)}</strong></div>
+      <div class="tx-summary-row"><span>Reference</span><strong>${txEsc(reference)}</strong></div>
+      <div class="tx-summary-row"><span>Gross Sales</span><strong>${txMoney(gross)}</strong></div>
+      <div class="tx-summary-row"><span>Discount</span><strong>${txMoney(discount)}</strong></div>
+      <div class="tx-summary-row tx-total-row"><span>Invoice Total</span><strong>${txMoney(total)}</strong></div>
+    </div>
+    <div class="tx-note">This action will create a transaction in Manager.</div>`;
+}
+
+async function confirmCreateInvoice(){
+  const sourceBtn=document.getElementById('importBtn');
+  if(!sourceBtn||sourceBtn.disabled)return;
+
+  txOpen({
+    eyebrow:'CREATE SALES INVOICE',
+    title:'Create Sales Invoice?',
+    body:txInvoiceConfirmation(),
+    actions:`<button type="button" id="txInvoiceCancel">Cancel</button>
+             <button type="button" id="txInvoiceConfirm" class="primary">Create Sales Invoice</button>`
+  });
+
+  document.getElementById('txInvoiceCancel').onclick=txClose;
+  document.getElementById('txInvoiceConfirm').onclick=async()=>{
+    const btn=document.getElementById('txInvoiceConfirm');
+    btn.disabled=true;
+    btn.textContent='Creating…';
+
+    const created=await createInvoice();
+    if(created!==true){
+      txOpen({
+        eyebrow:'CREATE SALES INVOICE',
+        title:'Could Not Create Sales Invoice',
+        body:`<div class="tx-success" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
+                <div class="tx-success-title">The Sales Invoice was not created.</div>
+                <div class="tx-success-detail" style="color:#b91c1c">Please review the error shown on the import screen and try again.</div>
+              </div>`,
+        actions:`<button type="button" id="txInvoiceErrorClose">Close</button>`
+      });
+      document.getElementById('txInvoiceErrorClose').onclick=txClose;
+      return;
+    }
+
+    const ref=state.invoiceReference||document.getElementById('invoiceReference')?.value||'';
+    const gross=state.uniqueItems.filter(x=>!x.excluded&&x.manager).reduce((sum,x)=>sum+(Number(x.amount)||0),0);
+    const discountRaw=Number(state.discountAmount)||0;
+    const discount=discountRaw>0?-discountRaw:discountRaw;
+    const total=Number(state.invoiceTotal)||0;
+
+    txOpen({
+      eyebrow:'SUCCESS',
+      title:'Sales Invoice Created',
+      body:`<div class="tx-success">
+               <div class="tx-success-title">Sales Invoice created successfully.</div>
+               <div class="tx-success-detail">Manager has accepted the transaction.</div>
+             </div>
+             <div class="tx-summary">
+               <div class="tx-summary-row"><span>Reference</span><strong>${txEsc(ref)}</strong></div>
+               <div class="tx-summary-row"><span>Gross Sales</span><strong>${txMoney(gross)}</strong></div>
+               <div class="tx-summary-row"><span>Discount</span><strong>${txMoney(discount)}</strong></div>
+               <div class="tx-summary-row tx-total-row"><span>Invoice Total</span><strong>${txMoney(total)}</strong></div>
+             </div>`,
+      actions:`<button type="button" id="txInvoiceDone">Close</button>
+               <button type="button" id="txInvoiceReceipts" class="success">Continue to Receipts</button>`
+    });
+
+    document.getElementById('txInvoiceDone').onclick=txClose;
+    document.getElementById('txInvoiceReceipts').onclick=()=>{
+      txClose();
+      document.getElementById('receiptPanel')?.scrollIntoView({behavior:'smooth',block:'start'});
+      updateFooterUI();
+    };
+  };
+}
+
+function txReceiptConfirmation(){
+  collectReceiptRows();
+  const rows=state.receiptRows||[];
+  return {rows,collected:rows.reduce((sum,r)=>sum+r.amount,0)};
+}
+
+async function confirmCreateReceipts(){
+  const sourceBtn=document.getElementById('createReceiptsBtn');
+  if(!sourceBtn||sourceBtn.disabled||state.receiptsPosting)return;
+  if(!state.invoiceKey){ showMsg('No invoice is loaded — create or select a Sales Invoice before posting receipts.','error'); return; }
+  if(!customerSelect?.value){ showMsg('Select a customer before posting receipts.','error'); return; }
+
+  const dateEl=document.getElementById('receiptDate');
+  if(dateEl?.value)state.receiptDate=dateEl.value;
+  const {rows,collected}=txReceiptConfirmation();
+  if(!rows.length){
+    showMsg('Enter at least one receipt amount.','error');
+    return;
+  }
+
+  // Account for rows already posted this session (see postedReceiptMap) — otherwise,
+  // after a partial batch success, this stale check would wrongly reject the retry
+  // of just the remaining rows as "exceeding" the invoice total.
+  let alreadyPosted=0; for(const p of state.postedReceiptMap.values()) alreadyPosted+=Number(p.amount)||0;
+  const remaining=(Number(state.invoiceTotal)||0)-alreadyPosted-collected;
+  if(remaining<-0.01){
+    showMsg('Collections cannot exceed the Invoice total.','error');
+    return;
+  }
+
+  const reference=state.invoiceReference||document.getElementById('invoiceReference')?.value||'—';
+   const receiptDate=state.receiptDate||document.getElementById('receiptDate')?.value||new Date().toISOString().slice(0,10);
+
+  // Capture the exact bank/cash allocation currently entered by the user.
+  const accountRows=rows.map(r=>{
+    const account=state.bankCashAccounts.find(a=>accountKey(a)===r.accountKey);
+    return {name:accountName(account||{}),amount:r.amount};
+  });
+
+  const allocationRows=accountRows.map(r=>`
+      <div class="tx-summary-row">
+        <span>${txEsc(r.name)}</span>
+        <strong>${txMoney(r.amount)}</strong>
+      </div>`).join('');
+
+  txOpen({
+    eyebrow:'RECORD COLLECTION',
+    title:'Create Receipts?',
+    body:`<div style="margin-bottom:12px">Please confirm the collection allocation below.</div>
+      <div class="tx-summary">
+        <div class="tx-summary-row"><span>Invoice</span><strong>${txEsc(reference)}</strong></div>
+        <div class="tx-summary-row"><span>Receipt Date</span><strong>${txEsc(receiptDate)}</strong></div>
+         <div class="tx-summary-row"><span>Receipts</span><strong>${txEsc(rows.length)}</strong></div>
+      </div>
+      <div class="tx-allocation-title"><span>BANK / CASH ACCOUNT</span><span>AMOUNT TO BE CREDITED</span></div>
+      <div class="tx-summary tx-allocation">
+        ${allocationRows}
+        <div class="tx-summary-row tx-total-row"><span>Total collected</span><strong>${txMoney(collected)}</strong></div>
+        <div class="tx-summary-row"><span>Invoice total</span><strong>${txMoney(Number(state.invoiceTotal)||0)}</strong></div>
+        <div class="tx-summary-row"><span>Remaining receivable</span><strong>${txMoney(Math.max(0,remaining))}</strong></div>
+      </div>
+      <div class="tx-note">Each populated bank/cash account will be recorded as a separate Receipt.</div>`,
+    actions:`<button type="button" id="txReceiptCancel">Cancel</button>
+             <button type="button" id="txReceiptConfirm" class="primary">Record Collection</button>`
+  });
+
+  document.getElementById('txReceiptCancel').onclick=txClose;
+  document.getElementById('txReceiptConfirm').onclick=async()=>{
+    const btn=document.getElementById('txReceiptConfirm');
+    btn.disabled=true;
+    btn.textContent='Creating…';
+
+    const created=await createReceipts();
+    if(created!==true){
+      // If SOME rows in this batch succeeded before one failed, postedReceiptMap now
+      // holds them — say so, so the user doesn't assume nothing happened and re-enter
+      // amounts for accounts that are already posted.
+      const okCount=state.postedReceiptMap.size;
+      txOpen({
+        eyebrow:'RECORD COLLECTION',
+        title: okCount>0 ? 'Some Receipts Were Not Created' : 'Could Not Create Receipts',
+        body:`<div class="tx-success" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
+                <div class="tx-success-title">${okCount>0 ? `${okCount} receipt${okCount===1?'':'s'} posted; the rest failed.` : 'The receipts were not created.'}</div>
+                <div class="tx-success-detail" style="color:#b91c1c">${okCount>0 ? 'The successful ones are locked in and will not be reposted — fix the remaining row(s) and try again.' : 'Please review the receipt posting error and try again.'}</div>
+              </div>`,
+        actions:`<button type="button" id="txReceiptErrorClose">Close</button>`
+      });
+      document.getElementById('txReceiptErrorClose').onclick=txClose;
+      return;
+    }
+
+    txOpen({
+      eyebrow:'SUCCESS',
+      title:'Receipts Created',
+      body:`<div class="tx-success">
+               <div class="tx-success-title">${rows.length} receipt${rows.length===1?'':'s'} created successfully.</div>
+               <div class="tx-success-detail">The collections have been recorded in Manager.</div>
+             </div>
+             <div class="tx-allocation-title"><span>BANK / CASH ACCOUNT</span><span>AMOUNT CREDITED</span></div>
+             <div class="tx-summary tx-allocation">
+               ${allocationRows}
+               <div class="tx-summary-row tx-total-row"><span>Total collected</span><strong>${txMoney(collected)}</strong></div>
+               <div class="tx-summary-row"><span>Invoice total</span><strong>${txMoney(Number(state.invoiceTotal)||0)}</strong></div>
+               <div class="tx-summary-row"><span>Remaining receivable</span><strong>${txMoney(Math.max(0,(Number(state.invoiceTotal)||0)-collected))}</strong></div>
+             </div>`,
+      actions:`<button type="button" id="txReceiptDone" class="success">Done</button>`
+    });
+
+    document.getElementById('txReceiptDone').onclick=txClose;
+  };
+}
+
+</script>
+
+</body>
+</html>
